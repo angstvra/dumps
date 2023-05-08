@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <title>Student Employability Prediction</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav>
+      <label class="logo"></label>
+      <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="predict.html">Predict</a></li>
+        <li><a href="predict.html">Skills</a></li>
+        <li><a href="#">About us</a></li>
+      </ul>
+    </nav>
+    <div id="graph-area"></div>
+    <py-config>
+      packages = ["matplotlib", "pandas", "seaborn"]
+    </py-config>
+
+    <py-script>
+      import pandas as pd
+      import matplotlib.pyplot as plt
+      import seaborn as sns
+      from pyodide.http import open_url
+
+      url = (
+          "https://raw.githubusercontent.com/angstvra/dataset/main/student.csv"
+      )
+      student_data = pd.read_csv(open_url(url))
+
+      def plot(data):
+        col_means = student_data.loc[:, "GENERAL APPEARANCE":"Student Performance Rating"].mean().to_frame().set_axis(["Mean"], axis=1)
+        col_means = col_means.sort_values(by="Mean", ascending=False)
+        plt.rcParams["figure.figsize"] = (18,15)
+        plt.title("Average per Column")
+        fig, ax = plt.subplots()
+        ax = sns.barplot(data=col_means, x=col_means.index, y="Mean")
+        ax.bar_label(ax.containers[0])
+        plt.xticks(rotation=45)
+        display(fig, target="graph-area", append=False)
+
+      plot(student_data)
+    </py-script>
+    <p style="font-size: 20px; font-weight: 100;">Filipino students currently have a high average performance rating of 4.61066. This is due to the intense academic landscape and atmosphere in the Philippines which is grade and number-centric. In terms of lowest rating, they averaged the lowest in communication skills at around 3.52549. This is related to their relatively close scores of presenting ideas and manners of speaking.</p>
+  </body>
+</html>

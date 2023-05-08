@@ -1,0 +1,117 @@
+<html>
+  <head>
+    <title>Student Employability Prediction</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav>
+      <label class="logo"></label>
+      <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="predict.html">Predict</a></li>
+        <li><a href="skills.html">Skills</a></li>
+        <li><a href="#">About us</a></li>
+      </ul>
+    </nav>
+    <p>General Appearance (1 to 5)</p>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="5" value="3" class="slider" id="appearance">
+    </div>
+    <p>Manner of Speaking (1 to 5)</p>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="5" value="3" class="slider" id="speaking">
+    </div>
+    <p>Physical Condition (1 to 5)</p>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="5" value="3" class="slider" id="physical">
+    </div>
+    <p>Mental Alertness (1 to 5)</p>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="5" value="3" class="slider" id="mental">
+    </div>
+    <p>Self-Confidence (1 to 5)</p>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="5" value="3" class="slider" id="confidence">
+    </div>
+    <p>Ability to Present Ideas (1 to 5)</p>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="5" value="3" class="slider" id="ideas">
+    </div>
+    <p>Communication Skills (1 to 5)</p>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="5" value="3" class="slider" id="comms">
+    </div>
+    <p>Student Performance Rating (1 to 5)</p>
+    <div class="slidecontainer">
+      <input type="range" min="1" max="5" value="3" class="slider" id="performance">
+    </div>
+    <button py-click="prediction()" id="predict" class="py-button">Predict</button>
+    <p id="resultPred"></p>
+    <py-config>
+      packages = ["matplotlib", "pandas", "seaborn", "scikit-learn", "numpy"]
+    </py-config>
+    <py-script>
+      import pandas as pd
+      import matplotlib.pyplot as plt
+      import numpy as np
+      import seaborn as sns
+      from sklearn.linear_model import LogisticRegression
+      from sklearn.neighbors import KNeighborsClassifier
+      from sklearn import svm
+      from sklearn.model_selection import train_test_split
+      from sklearn.metrics import accuracy_score
+
+      from pyodide.http import open_url
+
+      appearance = js.document.getElementById("appearance")
+      speaking = js.document.getElementById("speaking")
+      physical = js.document.getElementById("physical")
+      mental = js.document.getElementById("mental")
+      confidence = js.document.getElementById("confidence")
+      ideas = js.document.getElementById("ideas")
+      comms = js.document.getElementById("comms")
+      
+
+      url = (
+          "https://raw.githubusercontent.com/angstvra/dataset/main/student.csv"
+      )
+      student_data = pd.read_csv(open_url(url))
+      for i in student_data.index:
+          if student_data.at[i, "CLASS"] == "Employable":
+              student_data.at[i, "CLASS"] = 1
+          else:
+              student_data.at[i, "CLASS"] = 0
+      student_data = student_data.astype({"CLASS":float})
+
+      def prediction():
+          X = pd.DataFrame(np.array(student_data[["GENERAL APPEARANCE","MANNER OF SPEAKING","PHYSICAL CONDITION","MENTAL ALERTNESS","SELF-CONFIDENCE","ABILITY TO PRESENT IDEAS","COMMUNICATION SKILLS","Student Performance Rating"]]))
+          y = student_data["CLASS"]
+          X_train, X_test, y_train, y_test = train_test_split(X, y, random_state = 0)
+
+          df_pred = pd.concat([X_test, y_test], axis=1)
+
+          knn_model = KNeighborsClassifier(n_neighbors=6)
+          knn_model.fit(X_train, y_train)
+          knn_preds = knn_model.predict(X_test)
+          knn_df = df_pred.copy()
+          knn_df["Prediction"] = knn_preds
+          knn_df['Mean Percentage'] = knn_df.mean(axis=1, numeric_only=True)
+          input_data = (Element('appearance').value, Element('speaking').value, Element('physical').value, Element('mental').value, Element('confidence').value, Element('ideas').value, Element('comms').value, Element('performance').value)
+          # change the input data to a numpy array
+          input_data_as_numpy_array= np.asarray(input_data).astype('int64')
+
+          # reshape the numpy array as we are predicting for only on instance
+          input_data_reshaped = input_data_as_numpy_array.reshape(1,-1)
+
+          prediction = knn_model.predict(input_data_reshaped)
+
+          if (prediction[0]== 0):
+              display('The Student is Less Employable', target="resultPred")
+          else:
+              display('The Student is Employable', target="resultPred")
+    </py-script>
+  </body>
+</html>
